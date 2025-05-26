@@ -8,7 +8,7 @@ import emoji
 import os
 
 # Token do bot
-TOKEN = 'MTM3NTU2MDY2Mzk0NjIzMTkxOA.Gtiw4R.I0PkCsGzGD5xWqwFlESkoky9lsYlCi7WNgd-_M'
+bot.run(TOKEN)
 
 # Nomes dos canais
 CANAL_ORIGEM_NOME = 'edificar'
