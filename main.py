@@ -9,7 +9,7 @@ import os
 
 # Token do bot
 TOKEN = os.getenv('DISCORD_TOKEN')
-
+print(f"DEBUG: TOKEN carregado como: {TOKEN}")
 # Nomes dos canais
 CANAL_ORIGEM_NOME = 'edificar'
 CANAL_DESTINO_NOME = 'edificação'
