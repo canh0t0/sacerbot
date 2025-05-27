@@ -6,10 +6,12 @@ import asyncio
 import re
 import emoji
 import os
+import random
 
 # Token do bot
 TOKEN = os.getenv('DISCORD_TOKEN')
 print(f"DEBUG: TOKEN carregado como: {TOKEN}")
+
 # Nomes dos canais
 CANAL_ORIGEM_NOME = 'edificar'
 CANAL_DESTINO_NOME = 'edificação'
@@ -34,15 +36,33 @@ TOPICOS_PERGUNTAS = {
     "Bíblico": "Qual versículo ou passagem bíblica te edificou recentemente?"
 }
 
+# Lista para armazenar as frases
+frases = []
+
+# Carregar frases do arquivo frases_sacerbot.txt
+try:
+    with open('frases_sacerbot.txt', 'r', encoding='utf-8') as file:
+        frases = [linha.strip() for linha in file if linha.strip() and not linha.startswith('[')]
+    print(f"✅ {len(frases)} frases carregadas do arquivo frases_sacerbot.txt")
+except FileNotFoundError:
+    print("Erro: Arquivo frases_sacerbot.txt não encontrado.")
+except Exception as e:
+    print(f"Erro ao carregar frases: {e}")
+
 respostas_por_usuario = defaultdict(lambda: defaultdict(str))
 mensagens_perguntas = defaultdict(dict)
 servidor_alvo = {}
+
+# Variável para rastrear a última frase postada
+ultima_frase_data = None
+frase_do_dia = None
 
 @bot.event
 async def on_ready():
     print(f"✅ Bot {bot.user} está online!")
     lembrete_quinta.start()
     limpar_threads_quinta.start()
+    postar_frase_diaria.start()  # Inicia a tarefa de postar frases diárias
 
 @tasks.loop(minutes=1)
 async def lembrete_quinta():
@@ -86,6 +106,33 @@ async def limpar_threads_quinta():
                 owner = guild.owner
                 if owner:
                     await owner.send(f"Erro ao limpar dicionário no servidor '{guild.name}': {e}")
+
+@tasks.loop(minutes=1)
+async def postar_frase_diaria():
+    global ultima_frase_data, frase_do_dia
+    agora_utc = datetime.datetime.now(datetime.timezone.utc)
+    agora = agora_utc - datetime.timedelta(hours=3)  # UTC-3
+
+    # Verifica se é 9h da manhã e se passou 48 horas desde a última postagem
+    if agora.hour == 9 and agora.minute == 0:
+        if ultima_frase_data is None or (agora.date() - ultima_frase_data).days >= 2:
+            if frases:
+                frase_do_dia = random.choice(frases)
+                ultima_frase_data = agora.date()
+
+                for guild in bot.guilds:
+                    canal_destino = discord.utils.get(guild.text_channels, name=CANAL_DESTINO_NOME)
+                    if canal_destino:
+                        embed = discord.Embed(
+                            title="📜 Frase Devocional",
+                            color=discord.Color.gold(),
+                            description=frase_do_dia
+                        )
+                        embed.set_footer(text="Sacerbot - Edificação Diária")
+                        await canal_destino.send(embed=embed)
+                        print(f"[{agora}] Frase postada no canal '{canal_destino.name}' (Servidor: {guild.name}): {frase_do_dia}")
+                    else:
+                        print(f"Canal '{CANAL_DESTINO_NOME}' não encontrado no servidor '{guild.name}'")
 
 @bot.event
 async def on_message(message):
