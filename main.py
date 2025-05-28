@@ -299,6 +299,7 @@ async def ajuda(ctx):
         description="Aqui estão todos os comandos disponíveis!"
     )
     embed.add_field(name="!edificar", value="Inicia a edificação, enviando perguntas no privado para usuários com o cargo `sacerbot`.", inline=False)
+    embed.add_field(name="!frase", value="Envia uma frase devocional aleatória (disponível para usuários com o cargo `sacerbot`).", inline=False)
     embed.add_field(name="!limpar", value="Limpa os dicionários de respostas, perguntas e servidores alvo (usado para testes).", inline=False)
     embed.add_field(name="!ajuda", value="Mostra esta lista de comandos disponíveis.", inline=False)
     embed.set_footer(text="Sacerbot - Edificação Diária")
@@ -306,10 +307,19 @@ async def ajuda(ctx):
 
 @bot.command()
 async def frase(ctx):
-    # Verifica se o usuário tem o cargo "sacerbot"
-    cargo = discord.utils.get(ctx.guild.roles, name=CARGO_AUTORIZADO) if ctx.guild else None
-    if not cargo or CARGO_AUTORIZADO not in [role.name for role in ctx.author.roles]:
-        await ctx.send(f"Você não tem o cargo '{CARGO_AUTORIZADO}' para usar este comando.")
+    # Verifica se o usuário tem o cargo "sacerbot" em algum servidor
+    user = ctx.author
+    guild_encontrado = None
+    for guild in bot.guilds:
+        member = guild.get_member(user.id)
+        if member:
+            cargo = discord.utils.get(guild.roles, name=CARGO_AUTORIZADO)
+            if cargo and CARGO_AUTORIZADO in [role.name for role in member.roles]:
+                guild_encontrado = guild
+                break
+
+    if not guild_encontrado:
+        await ctx.send(f"Você não tem o cargo '{CARGO_AUTORIZADO}' em nenhum servidor para usar este comando.")
         return
 
     # Verifica se há frases carregadas
