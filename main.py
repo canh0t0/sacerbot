@@ -304,5 +304,29 @@ async def ajuda(ctx):
     embed.set_footer(text="Sacerbot - Edificação Diária")
     await ctx.send(embed=embed)
 
+@bot.command()
+async def frase(ctx):
+    # Verifica se o usuário tem o cargo "sacerbot"
+    cargo = discord.utils.get(ctx.guild.roles, name=CARGO_AUTORIZADO) if ctx.guild else None
+    if not cargo or CARGO_AUTORIZADO not in [role.name for role in ctx.author.roles]:
+        await ctx.send(f"Você não tem o cargo '{CARGO_AUTORIZADO}' para usar este comando.")
+        return
+
+    # Verifica se há frases carregadas
+    if not frases:
+        await ctx.send("Nenhuma frase disponível no momento.")
+        return
+
+    # Escolhe uma frase aleatória e envia
+    frase_aleatoria = random.choice(frases)
+    embed = discord.Embed(
+        title="📜 Frase Devocional",
+        color=discord.Color.gold(),
+        description=frase_aleatoria
+    )
+    embed.set_footer(text="Sacerbot - Edificação Diária")
+    await ctx.send(embed=embed)
+    print(f"Frase enviada para {ctx.author.display_name} via comando !frase: {frase_aleatoria}")
+
 # Inicia o bot
 bot.run(TOKEN)
