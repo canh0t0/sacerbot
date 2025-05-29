@@ -300,6 +300,7 @@ async def ajuda(ctx):
     )
     embed.add_field(name="!edificar", value="Inicia a edificação, enviando perguntas no privado para usuários com o cargo `sacerbot`.", inline=False)
     embed.add_field(name="!frase", value="Envia uma frase devocional aleatória (disponível para usuários com o cargo `sacerbot`).", inline=False)
+    embed.add_field(name="!exortar", value="Exorta um membro aleatório com o cargo 'sacerbot' no canal 'edificação' (disponível para usuários com o cargo `sacerbot`).", inline=False)
     embed.add_field(name="!limpar", value="Limpa os dicionários de respostas, perguntas e servidores alvo (usado para testes).", inline=False)
     embed.add_field(name="!ajuda", value="Mostra esta lista de comandos disponíveis.", inline=False)
     embed.set_footer(text="Sacerbot - Edificação Diária")
@@ -337,6 +338,124 @@ async def frase(ctx):
     embed.set_footer(text="Sacerbot - Edificação Diária")
     await ctx.send(embed=embed)
     print(f"Frase enviada para {ctx.author.display_name} via comando !frase: {frase_aleatoria}")
+
+# Lista de exortações sacerdotais
+EXORTACOES = [
+    "Ó {nome}, teme ao Senhor e aparta-te do mal, pois 'o temor do Senhor é o princípio da sabedoria' (Provérbios 9:10)! Não sejas negligente na tua santificação!",
+    "Filho {nome}, não confies nas tuas obras vãs, pois 'pela graça sois salvos, mediante a fé' (Efésios 2:8). Arrepende-te e crê somente em Cristo!",
+    "Amado {nome}, por que te esqueces da Palavra? 'Examinai as Escrituras', ordenou o Mestre (João 5:39). Não sejas um ouvinte negligente, mas um cumpridor da verdade!",
+    "Irmão {nome}, o pecado te cerca! Foge dele, pois 'o salário do pecado é a morte' (Romanos 6:23). Volta-te para Deus e vive na Sua justiça!",
+    "Ó {nome}, não sejas morno na fé, pois o Senhor 'vomitará os mornos da Sua boca' (Apocalipse 3:16)! Sê fervoroso e ardente no Espírito!",
+    "Peregrino {nome}, a soberania de Deus te chama à obediência! 'Obedecei a Deus e não aos homens' (Atos 5:29). Não resistas à vontade do Altíssimo!",
+    "Filho {nome}, onde está teu temor a Deus? 'O Senhor corrige a quem ama' (Hebreus 12:6). Treme diante da Sua santidade e busca a retidão!",
+    "Amado {nome}, não te envergonhes do Evangelho, pois ele é 'o poder de Deus para salvação' (Romanos 1:16)! Proclama a verdade com ousadia!",
+    "Irmão {nome}, por que te desvias do caminho? 'Estreita é a porta que conduz à vida' (Mateus 7:14). Retorna ao Senhor com todo teu coração!",
+    "Ó {nome}, não te glories na tua força, pois 'o coração do homem é enganoso' (Jeremias 17:9). Humilha-te diante de Deus e Ele te exaltará!",
+    "Filho {nome}, a oração é teu dever! 'Orai sem cessar' (1 Tessalonicenses 5:17), pois sem comunhão com Deus, tua alma perecerá na secura!",
+    "Amado {nome}, não ames o mundo, pois 'a amizade com o mundo é inimizade contra Deus' (Tiago 4:4). Escolhe hoje a quem servirás!",
+    "Irmão {nome}, a fé sem obras é morta (Tiago 2:17)! Mostra tua fé pelas tuas ações, ou serás julgado como um servo inútil!",
+    "Ó {nome}, por que te calas diante do pecado? 'Denunciai o erro', diz o Senhor (Isaías 58:1). Não sejas cúmplice da iniqüidade!",
+    "Filho {nome}, busca o Reino de Deus em primeiro lugar (Mateus 6:33), ou todas as tuas prioridades serão vaidade e tormento de espírito!",
+    "Amado {nome}, não te deixes enganar pelos falsos mestres, pois 'muitos virão em Meu nome' (Mateus 24:5). Apega-te à sã doutrina!",
+    "Irmão {nome}, o dia do Senhor se aproxima! 'Preparai-vos para encontrar o vosso Deus' (Amós 4:12). Não sejas achado em falta!",
+    "Ó {nome}, não enduresças teu coração, pois 'hoje, se ouvirdes a Sua voz, não endureçais' (Hebreus 3:15). Ouve o chamado do Espírito!",
+    "Filho {nome}, a soberania divina te escolheu! 'Não fostes vós que me escolhestes, mas Eu vos escolhi' (João 15:16). Vive digno da tua vocação!",
+    "Amado {nome}, por que te esqueces da cruz? 'Cristo morreu por nós, sendo nós ainda pecadores' (Romanos 5:8). Vive em gratidão ao Redentor!",
+    "Irmão {nome}, não te glories na tua justiça, pois 'todos pecaram e carecem da glória de Deus' (Romanos 3:23). Clama pela misericórdia divina!",
+    "Ó {nome}, a Palavra é tua espada! 'Toma a espada do Espírito' (Efésios 6:17) e combate o bom combate da fé com ousadia!",
+    "Filho {nome}, não te conformes com este século (Romanos 12:2)! Sê transformado e separado para a glória de Deus!",
+    "Amado {nome}, o Espírito te convence do pecado (João 16:8). Não resistas à voz de Deus, mas arrepende-te e busca a santificação!",
+    "Irmão {nome}, por que negligencias a comunhão? 'Não deixemos de congregar-nos' (Hebreus 10:25). Fortalece-te com os irmãos na fé!",
+    "Ó {nome}, a graça de Deus te basta (2 Coríntios 12:9)! Não murmures nas provações, mas confia na força do Altíssimo!",
+    "Filho {nome}, o temor a Deus te falta! 'Temei a Deus e dai-Lhe glória' (Apocalipse 14:7). Não sejas negligente diante do Santo!",
+    "Amado {nome}, não te vanglories na tua sabedoria, pois 'a sabedoria deste mundo é loucura diante de Deus' (1 Coríntios 3:19). Busca a sabedoria celestial!",
+    "Irmão {nome}, a santidade é teu chamado! 'Sede santos, porque Eu sou santo' (1 Pedro 1:16). Não te manches com as obras das trevas!",
+    "Ó {nome}, por que te esqueces do dia do juízo? 'Presta contas ao teu Criador' (Eclesiastes 12:1). Prepara-te para o tribunal de Cristo!",
+    "Filho {nome}, a fé é tua âncora! 'Sem fé é impossível agradar a Deus' (Hebreus 11:6). Crê e não duvides da promessa divina!",
+    "Amado {nome}, não te envolvas com jugo desigual (2 Coríntios 6:14)! Sê separado e consagrado ao serviço do Senhor!",
+    "Irmão {nome}, o amor ao dinheiro te destrói, pois 'a raiz de todos os males é o amor ao dinheiro' (1 Timóteo 6:10). Busca as riquezas do Reino!",
+    "Ó {nome}, não te cales diante da injustiça! 'Fazei justiça ao órfão e à viúva' (Isaías 1:17). Sê voz dos oprimidos em nome do Senhor!",
+    "Filho {nome}, a cruz é tua glória! 'Longe de mim gloriar-me, senão na cruz de Cristo' (Gálatas 6:14). Não te envergonhes do sacrifício!",
+    "Amado {nome}, a paciência te é exigida! 'Alegrai-vos na esperança, sede pacientes na tribulação' (Romanos 12:12). Suporta com fé!",
+    "Irmão {nome}, por que te desvias da verdade? 'A Tua palavra é a verdade' (João 17:17). Retorna à Escritura e firma-te na rocha!",
+    "Ó {nome}, não te glories na tua força, pois 'o poder pertence a Deus' (Salmos 62:11). Depende d’Ele em toda a tua jornada!",
+    "Filho {nome}, o arrependimento é teu chamado! 'Arrependei-vos, pois o Reino de Deus está próximo' (Mateus 4:17). Não tardes em voltar-te para Deus!",
+    "Amado {nome}, a humildade te falta! 'Quem se exalta será humilhado' (Mateus 23:12). Humilha-te perante o Senhor e Ele te erguerá!",
+    "Irmão {nome}, não te esqueças do pobre, pois 'quem dá ao pobre empresta a Deus' (Provérbios 19:17). Sê generoso como Cristo foi!",
+    "Ó {nome}, a perseverança é tua prova! 'Aquele que perseverar até o fim será salvo' (Mateus 24:13). Não desistas do caminho estreito!",
+    "Filho {nome}, a soberania de Deus te guia! 'Os passos do homem são dirigidos pelo Senhor' (Provérbios 20:24). Submete-te à Sua vontade!",
+    "Amado {nome}, não te cales na adoração! 'Louvai ao Senhor, porque Ele é bom' (Salmos 136:1). Exalta o nome do Altíssimo em todo tempo!",
+    "Irmão {nome}, a ira te consome! 'A ira do homem não opera a justiça de Deus' (Tiago 1:20). Busca a paz que vem do Espírito!",
+    "Ó {nome}, por que te esqueces da eternidade? 'Que aproveita ao homem ganhar o mundo e perder a sua alma?' (Marcos 8:36). Busca o que é eterno!",
+    "Filho {nome}, a gratidão te falta! 'Em tudo dai graças' (1 Tessalonicenses 5:18). Reconhece as bênçãos do Senhor em tua vida!",
+    "Amado {nome}, o Espírito te chama à santificação! 'Fugi da imoralidade' (1 Coríntios 6:18). Sê puro para o serviço do Reino!",
+    "Irmão {nome}, não te deixes levar pela vanglória! 'Nada façais por vanglória, mas por humildade' (Filipenses 2:3). Sê servo em tudo!",
+    "Ó {nome}, a Palavra é teu sustento! 'Nem só de pão viverá o homem, mas de toda palavra de Deus' (Mateus 4:4). Alimenta tua alma com a verdade!",
+    "Filho {nome}, a soberania divina te corrige! 'O Senhor disciplina a quem ama' (Provérbios 3:12). Aceita a correção e cresce na fé!",
+    "Amado {nome}, não te esqueças do amor! 'Amai-vos uns aos outros, como Eu vos amei' (João 13:34). Sê reflexo do amor de Cristo!",
+    "Irmão {nome}, o temor ao homem te prende! 'Em Deus confio, não temerei' (Salmos 56:4). Sê corajoso na obra do Senhor!",
+    "Ó {nome}, por que negligencias a oração? 'Pedi, e dar-se-vos-á' (Mateus 7:7). Clama ao Senhor e Ele te ouvirá!",
+    "Filho {nome}, a fé te sustenta nas tormentas! 'Não temas, pois Eu sou contigo' (Isaías 41:10). Confia no Deus que acalma os ventos!",
+    "Amado {nome}, não te deixes enganar pelo orgulho! 'O orgulho precede a ruína' (Provérbios 16:18). Humilha-te e busca a graça de Deus!",
+    "Irmão {nome}, a verdade te liberta! 'Conhecereis a verdade, e a verdade vos libertará' (João 8:32). Apega-te à Palavra e sê livre!",
+    "Ó {nome}, não te cales na proclamação! 'Ide e fazei discípulos' (Mateus 28:19). Sê testemunha fiel do Evangelho!",
+    "Filho {nome}, a paciência é tua virtude! 'Esperai no Senhor e sede fortes' (Salmos 27:14). Não te apresses, mas confia no tempo de Deus!",
+    "Amado {nome}, o pecado te escraviza! 'Quem comete pecado é escravo do pecado' (João 8:34). Clama pela libertação do Senhor!",
+    "Irmão {nome}, a comunhão é tua força! 'Onde dois ou três estão reunidos em Meu nome, ali estou' (Mateus 18:20). Não te afastes dos irmãos!",
+    "Ó {nome}, por que te esqueces da cruz? 'Cristo padeceu por vós' (1 Pedro 2:21). Vive em memória do sacrifício do Cordeiro!",
+    "Filho {nome}, a santidade é tua meta! 'Sem santidade ninguém verá o Senhor' (Hebreus 12:14). Purifica-te para a glória de Deus!",
+    "Amado {nome}, não te deixes abater! 'Não temas, pois Eu te remi' (Isaías 43:1). O Senhor é teu refúgio e fortaleza!",
+    "Irmão {nome}, a humildade te exalta! 'Quem se humilhar será exaltado' (Lucas 14:11). Sê humilde e o Senhor te honrará!",
+    "Ó {nome}, a Palavra te guia! 'Lâmpada para os meus pés é a Tua palavra' (Salmos 119:105). Não te desvies do caminho da luz!",
+    "Filho {nome}, o amor é teu mandamento! 'Amarás o teu próximo como a ti mesmo' (Mateus 22:39). Sê luz na vida do teu irmão!",
+    "Amado {nome}, a perseverança te coroa! 'Sê fiel até a morte, e dar-te-ei a coroa da vida' (Apocalipse 2:10). Não retrocedas na jornada!",
+    "Irmão {nome}, o Espírito te renova! 'Renovai-vos no espírito do vosso entendimento' (Efésios 4:23). Busca a transformação divina!"
+]
+
+@bot.command()
+async def exortar(ctx):
+    # Verifica se o usuário tem o cargo "sacerbot" (no servidor ou em algum servidor se for DM)
+    user = ctx.author
+    guild_encontrado = ctx.guild if ctx.guild else None
+    if not guild_encontrado:
+        for guild in bot.guilds:
+            member = guild.get_member(user.id)
+            if member and CARGO_AUTORIZADO in [role.name for role in member.roles]:
+                guild_encontrado = guild
+                break
+    else:
+        if CARGO_AUTORIZADO not in [role.name for role in user.roles]:
+            await ctx.send(f"Você não tem o cargo '{CARGO_AUTORIZADO}' para usar este comando.")
+            return
+
+    if not guild_encontrado:
+        await ctx.send(f"Você não tem o cargo '{CARGO_AUTORIZADO}' em nenhum servidor para usar este comando.")
+        return
+
+    # Encontra o canal "edificação" no servidor
+    canal_edificacao = discord.utils.get(guild_encontrado.text_channels, name=CANAL_DESTINO_NOME)
+    if not canal_edificacao:
+        await ctx.send(f"Erro: Canal '{CANAL_DESTINO_NOME}' não encontrado no servidor.")
+        return
+
+    # Seleciona um membro aleatório com o cargo "sacerbot" (excluindo o bot)
+    membros_com_cargo = [member for member in guild_encontrado.members if not member.bot and CARGO_AUTORIZADO in [role.name for role in member.roles]]
+    if not membros_com_cargo:
+        await ctx.send("Não há membros com o cargo 'sacerbot' para exortar neste servidor.")
+        return
+
+    alvo = random.choice(membros_com_cargo)
+    exortacao = random.choice(EXORTACOES).format(nome=alvo.display_name)
+
+    # Envia a exortação no canal "edificação"
+    embed = discord.Embed(
+        title="🕊️ Exortação Sacerdotal",
+        color=discord.Color.dark_purple(),
+        description=exortacao
+    )
+    embed.set_footer(text="Sacerbot - Chamado à Santidade")
+    await canal_edificacao.send(embed=embed)
+    print(f"Exortação enviada para {alvo.display_name} por {ctx.author.display_name} no canal {canal_edificacao.name}")
 
 # Inicia o bot
 bot.run(TOKEN)
