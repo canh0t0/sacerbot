@@ -457,5 +457,3 @@ async def exortar(ctx):
     await canal_edificacao.send(embed=embed)
     print(f"Exortação enviada para {alvo.display_name} por {ctx.author.display_name} no canal {canal_edificacao.name}")
 
-# Inicia o bot
-bot.run(TOKEN)
