@@ -456,4 +456,6 @@ async def exortar(ctx):
     embed.set_footer(text="Sacerbot - Chamado à Santidade")
     await canal_edificacao.send(embed=embed)
     print(f"Exortação enviada para {alvo.display_name} por {ctx.author.display_name} no canal {canal_edificacao.name}")
+ if __name__ == "__main__":
+    bot.run(TOKEN)
 
